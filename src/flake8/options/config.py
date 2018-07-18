@@ -1,6 +1,7 @@
 """Config handling logic for Flake8."""
 import collections
 import configparser
+import itertools
 import logging
 import os.path
 import sys
@@ -124,10 +125,10 @@ class ConfigFileFinder(object):
             [str]
         """
         exists = os.path.exists
-        return [f for f in self.prepend_config_files if exists(f)] + [
-            filename
-            for filename in self.generate_possible_local_files()
-        ] + [f for f in self.extra_config_files if exists(f)]
+        prepend_files = filter(exists, self.prepend_config_files)
+        local_files = self.generate_possible_local_files()
+        append_files = filter(exists, self.extra_config_files)
+        return itertools.chain(prepend_files, local_files, append_files)
 
     def local_configs(self):
         """Parse all local config files into one config object."""
