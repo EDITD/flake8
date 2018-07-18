@@ -113,33 +113,13 @@ def test_generate_possible_local_files(args, expected):
         (['flake8/'],
             [CLI_SPECIFIED_FILEPATH],
             [],
-            [os.path.abspath(CLI_SPECIFIED_FILEPATH),
-                os.path.abspath('setup.cfg'),
-                os.path.abspath('tox.ini')]),
-        # Common prefix of "flake8/" with missing prepend config files
-        (['flake8/'],
-            [CLI_SPECIFIED_FILEPATH,
-                'tests/fixtures/config_files/missing.ini'],
-            [],
-            [os.path.abspath(CLI_SPECIFIED_FILEPATH),
-                os.path.abspath('setup.cfg'),
+            [os.path.abspath('setup.cfg'),
                 os.path.abspath('tox.ini')]),
         # Common prefix of "flake8/" with prepend and extra config files
         (['flake8/'],
             [CLI_SPECIFIED_FILEPATH],
             [CLI_SPECIFIED_FILEPATH],
-            [os.path.abspath(CLI_SPECIFIED_FILEPATH),
-                os.path.abspath('setup.cfg'),
-                os.path.abspath('tox.ini'),
-                os.path.abspath(CLI_SPECIFIED_FILEPATH)]),
-        # Common prefix of "flake8/" with missing prepend and extra config
-        (['flake8/'],
-            [CLI_SPECIFIED_FILEPATH,
-                'tests/fixtures/config_files/missing1.ini'],
-            [CLI_SPECIFIED_FILEPATH,
-                'tests/fixtures/config_files/missing2.ini'],
-            [os.path.abspath(CLI_SPECIFIED_FILEPATH),
-                os.path.abspath('setup.cfg'),
+            [os.path.abspath('setup.cfg'),
                 os.path.abspath('tox.ini'),
                 os.path.abspath(CLI_SPECIFIED_FILEPATH)]),
     ])
@@ -152,6 +132,63 @@ def test_local_config_files(
     )
 
     assert list(finder.local_config_files()) == expected
+
+
+@pytest.mark.parametrize(
+    'args,prepend_config_files,extra_config_files,expected', [
+        # No arguments, common prefix of abspath('.')
+        ([],
+            [],
+            [],
+            []),
+        # Common prefix of "flake8/"
+        (['flake8/options', 'flake8/'],
+            [],
+            [],
+            []),
+        # Common prefix of "flake8/options"
+        (['flake8/options', 'flake8/options/sub'],
+            [],
+            [],
+            []),
+        # Common prefix of "flake8/" with extra config files specified
+        (['flake8/'],
+            [],
+            [CLI_SPECIFIED_FILEPATH],
+            []),
+        # Common prefix of "flake8/" with prepend config files specified
+        (['flake8/'],
+            [CLI_SPECIFIED_FILEPATH],
+            [],
+            [os.path.abspath(CLI_SPECIFIED_FILEPATH)]),
+        # Common prefix of "flake8/" with missing prepend config files
+        (['flake8/'],
+            [CLI_SPECIFIED_FILEPATH,
+                'tests/fixtures/config_files/missing.ini'],
+            [],
+            [os.path.abspath(CLI_SPECIFIED_FILEPATH)]),
+        # Common prefix of "flake8/" with prepend and extra config files
+        (['flake8/'],
+            [CLI_SPECIFIED_FILEPATH],
+            [CLI_SPECIFIED_FILEPATH],
+            [os.path.abspath(CLI_SPECIFIED_FILEPATH)]),
+        # Common prefix of "flake8/" with missing prepend and extra config
+        (['flake8/'],
+            [CLI_SPECIFIED_FILEPATH,
+                'tests/fixtures/config_files/missing1.ini'],
+            [CLI_SPECIFIED_FILEPATH,
+                'tests/fixtures/config_files/missing2.ini'],
+            [os.path.abspath(CLI_SPECIFIED_FILEPATH)]),
+    ])
+def test_prepend_config_files(
+        args, prepend_config_files, extra_config_files, expected
+):
+    """Verify discovery of local config files."""
+    finder = config.ConfigFileFinder(
+        'flake8', args, prepend_config_files, extra_config_files
+    )
+
+    assert list(finder.prepend_config_files()) == expected
 
 
 def test_local_configs():

@@ -1,7 +1,6 @@
 """Config handling logic for Flake8."""
 import collections
 import configparser
-import itertools
 import logging
 import os.path
 import sys
@@ -37,14 +36,14 @@ class ConfigFileFinder(object):
         """
         # The values of --prepend-config from the CLI
         prepend_config_files = prepend_config_files or []
-        self.prepend_config_files = [
+        self._prepend_config_files = [
             # Ensure the paths are absolute paths for local_config_files
             os.path.abspath(f) for f in prepend_config_files
         ]
 
         # The values of --append-config from the CLI
         extra_config_files = extra_config_files or []
-        self.extra_config_files = [
+        self._extra_config_files = [
             # Ensure the paths are absolute paths for local_config_files
             os.path.abspath(f) for f in extra_config_files
         ]
@@ -68,10 +67,10 @@ class ConfigFileFinder(object):
         self.parent = self.tail = os.path.abspath(os.path.commonprefix(args))
 
         # caches to avoid double-reading config files
-        self._local_configs = None
-        self._local_found_files = []
-        self._user_config = None
-        self._cli_configs = {}
+        self._local_config_files = None
+        self._user_config_files = None
+        self._configs = {}
+        self._found_files = {}
 
     @staticmethod
     def _read_config(files):
@@ -93,14 +92,20 @@ class ConfigFileFinder(object):
                               filename)
         return (config, found_files)
 
-    def cli_config(self, files):
-        """Read and parse the config file specified on the command-line."""
-        if files not in self._cli_configs:
+    def _config_with_files(self, files):
+        """Read and parse the config files passed as parameters."""
+        key = str(files)
+        if key not in self._configs:
             config, found_files = self._read_config(files)
             if found_files:
-                LOG.debug('Found cli configuration files: %s', found_files)
-            self._cli_configs[files] = config
-        return self._cli_configs[files]
+                LOG.debug('Found configuration files: %s', found_files)
+            self._configs[key] = config
+            self._found_files[key] = found_files
+        return self._configs[key], self._found_files[key]
+
+    def cli_config(self, files):
+        """Read and parse the config file specified on the command-line."""
+        return self._config_with_files(files)[0]
 
     def generate_possible_local_files(self):
         """Find and generate all local config files."""
@@ -131,23 +136,19 @@ class ConfigFileFinder(object):
             [str]
         """
         exists = os.path.exists
-        prepend_files = filter(exists, self.prepend_config_files)
-        local_files = self.generate_possible_local_files()
-        append_files = filter(exists, self.extra_config_files)
-        return itertools.chain(prepend_files, local_files, append_files)
+        return [
+            filename
+            for filename in self.generate_possible_local_files()
+        ] + [f for f in self._extra_config_files if exists(f)]
 
     def local_configs_with_files(self):
         """Parse all local config files into one config object.
 
         Return (config, found_config_files) tuple.
         """
-        if self._local_configs is None:
-            config, found_files = self._read_config(self.local_config_files())
-            if found_files:
-                LOG.debug('Found local configuration files: %s', found_files)
-            self._local_configs = config
-            self._local_found_files = found_files
-        return (self._local_configs, self._local_found_files)
+        if self._local_config_files is None:
+            self._local_config_files = self.local_config_files()
+        return self._config_with_files(self._local_config_files)
 
     def local_configs(self):
         """Parse all local config files into one config object."""
@@ -159,14 +160,23 @@ class ConfigFileFinder(object):
             return os.path.expanduser('~\\' + self.program_config)
         return os.path.join(self.xdg_home, self.program_name)
 
+    def user_config_files(self):
+        """Find the user-level config files."""
+        return [self.user_config_file()]
+
     def user_config(self):
         """Parse the user config file into a config object."""
-        if self._user_config is None:
-            config, found_files = self._read_config(self.user_config_file())
-            if found_files:
-                LOG.debug('Found user configuration files: %s', found_files)
-            self._user_config = config
-        return self._user_config
+        if self._user_config_files is None:
+            self._user_config_files = self.user_config_files()
+        return self._config_with_files(self._user_config_files)[0]
+
+    def prepend_config_files(self):
+        """Find all prepend config files."""
+        return (f for f in self._prepend_config_files if os.path.exists(f))
+
+    def prepend_configs(self):
+        """Return configuration as per prepend files found."""
+        return self._config_with_files(self.prepend_config_files())[0]
 
 
 class MergedConfigParser(object):
@@ -273,6 +283,17 @@ class MergedConfigParser(object):
         LOG.debug('Parsing CLI configuration files.')
         return self._parse_config(config)
 
+    def parse_prepend_config(self):
+        """Parse and return the prepend configuration files."""
+        config = self.config_finder.prepend_configs()
+        if not self.is_configured_by(config):
+            LOG.debug('Prepend configuration files have no %s section',
+                      self.program_name)
+            return {}
+
+        LOG.debug('Parsing prepend configuration files.')
+        return self._parse_config(config)
+
     def merge_user_and_local_config(self):
         """Merge the parsed user and local configuration files.
 
@@ -281,10 +302,14 @@ class MergedConfigParser(object):
         :rtype:
             dict
         """
+        prepend_config = self.parse_prepend_config()
         user_config = self.parse_user_config()
         config = self.parse_local_config()
 
         for option, value in user_config.items():
+            config.setdefault(option, value)
+
+        for option, value in prepend_config.items():
             config.setdefault(option, value)
 
         return config

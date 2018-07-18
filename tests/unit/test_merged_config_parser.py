@@ -191,7 +191,7 @@ def test_parsed_configs_are_equivalent(
     with mock.patch.object(config_finder, 'local_config_files') as localcfs:
         localcfs.return_value = [config_fixture_path]
         with mock.patch.object(config_finder,
-                               'user_config_file') as usercf:
+                               'user_config_files') as usercf:
             usercf.return_value = []
             parsed_config = parser.merge_user_and_local_config()
 
@@ -223,7 +223,7 @@ def test_parsed_hyphenated_and_underscored_names(
     with mock.patch.object(config_finder, 'local_config_files') as localcfs:
         localcfs.return_value = [config_file]
         with mock.patch.object(config_finder,
-                               'user_config_file') as usercf:
+                               'user_config_files') as usercf:
             usercf.return_value = []
             parsed_config = parser.merge_user_and_local_config()
 
