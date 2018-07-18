@@ -21,8 +21,8 @@ requires = [
     # http://flake8.pycqa.org/en/latest/faq.html#why-does-flake8-use-ranges-for-its-dependencies
     # And in which releases we will update those ranges here:
     # http://flake8.pycqa.org/en/latest/internal/releases.html#releasing-flake8
-    "pyflakes >= 1.5.0, < 1.7.0",
-    "pycodestyle >= 2.0.0, < 2.4.0",
+    "pyflakes >= 2.0.0, < 2.1.0",
+    "pycodestyle >= 2.4.0, < 2.5.0",
     "mccabe >= 0.6.0, < 0.7.0",
     "setuptools >= 30",
 ]
@@ -74,6 +74,7 @@ setuptools.setup(
         "flake8.options",
         "flake8.plugins",
     ],
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     install_requires=requires,
     extras_require=extras_require,
     entry_points={
@@ -85,7 +86,7 @@ setuptools.setup(
         ],
         'flake8.extension': [
             'F = flake8.plugins.pyflakes:FlakesChecker',
-            # PEP-0008 checks provied by PyCQA/pycodestyle
+            # PEP-0008 checks provided by PyCQA/pycodestyle
             PEP8_PLUGIN('tabs_or_spaces'),
             PEP8_PLUGIN('tabs_obsolete'),
             PEP8_PLUGIN('trailing_whitespace'),
@@ -108,7 +109,8 @@ setuptools.setup(
             PEP8_PLUGIN('module_imports_on_top_of_file'),
             PEP8_PLUGIN('compound_statements'),
             PEP8_PLUGIN('explicit_line_join'),
-            PEP8_PLUGIN('break_around_binary_operator'),
+            PEP8_PLUGIN('break_after_binary_operator'),
+            PEP8_PLUGIN('break_before_binary_operator'),
             PEP8_PLUGIN('comparison_to_singleton'),
             PEP8_PLUGIN('comparison_negative'),
             PEP8_PLUGIN('comparison_type'),
@@ -118,6 +120,8 @@ setuptools.setup(
             PEP8_PLUGIN('python_3000_raise_comma'),
             PEP8_PLUGIN('python_3000_not_equal'),
             PEP8_PLUGIN('python_3000_backticks'),
+            PEP8_PLUGIN('python_3000_invalid_escape_sequence'),
+            PEP8_PLUGIN('python_3000_async_await_keywords'),
         ],
         'flake8.report': [
             'default = flake8.formatting.default:Default',

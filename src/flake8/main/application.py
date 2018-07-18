@@ -180,6 +180,8 @@ class Application(object):
                 self.prelim_opts.isolated,
             )
 
+        sys.path.extend(self.local_plugins.paths)
+
         if self.check_plugins is None:
             self.check_plugins = plugin_manager.Checkers(
                 self.local_plugins.extension)
@@ -310,7 +312,12 @@ class Application(object):
         if self.running_against_diff:
             files = sorted(self.parsed_diff)
         self.file_checker_manager.start(files)
-        self.file_checker_manager.run()
+        try:
+            self.file_checker_manager.run()
+        except exceptions.PluginExecutionFailed as plugin_failed:
+            print(str(plugin_failed))
+            print('Run flake8 with greater verbosity to see more details')
+            self.catastrophic_failure = True
         LOG.info('Finished running')
         self.file_checker_manager.stop()
         self.end_time = time.time()
@@ -401,7 +408,6 @@ class Application(object):
             print('... stopped')
             LOG.critical('Caught keyboard interrupt from user')
             LOG.exception(exc)
-            self.file_checker_manager._force_cleanup()
             self.catastrophic_failure = True
         except exceptions.ExecutionError as exc:
             print('There was a critical error during execution of Flake8:')

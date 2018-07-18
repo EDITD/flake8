@@ -46,6 +46,7 @@ def test_strip_utf_bom(first_line):
     (['#!/usr/bin/python', '# flake8: noqa', 'a = 1'], True),
     (['# flake8: noqa', '#!/usr/bin/python', 'a = 1'], True),
     (['#!/usr/bin/python', 'a = 1', '# flake8: noqa'], True),
+    (['#!/usr/bin/python', 'a = 1  # flake8: noqa'], False),
 ])
 def test_should_ignore_file(lines, expected):
     """Verify that we ignore a file if told to."""
@@ -321,3 +322,8 @@ def test_log_token(token, log_string):
 def test_count_parentheses(current_count, token_text, expected):
     """Verify our arithmetic is correct."""
     assert processor.count_parentheses(current_count, token_text) == expected
+
+
+def test_nonexistent_file():
+    with pytest.raises(IOError):
+        processor.FileProcessor("foobar.py", options_from())
