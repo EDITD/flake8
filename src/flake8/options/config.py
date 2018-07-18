@@ -18,7 +18,10 @@ class ConfigFileFinder(object):
 
     PROJECT_FILENAMES = ('setup.cfg', 'tox.ini')
 
-    def __init__(self, program_name, args, prepend_config_files, extra_config_files):
+    def __init__(
+            self, program_name, args,
+            prepend_config_files, extra_config_files
+    ):
         """Initialize object to find config files.
 
         :param str program_name:
@@ -26,9 +29,11 @@ class ConfigFileFinder(object):
         :param list args:
             The extra arguments passed on the command-line.
         :param list prepend_config_files:
-            Extra configuration files specified by the user to read before user and project configs.
+            Extra configuration files specified by the user to read before user
+            and project configs.
         :param list extra_config_files:
-            Extra configuration files specified by the user to read after user and project configs.
+            Extra configuration files specified by the user to read after user
+            and project configs.
         """
         # The values of --prepend-config from the CLI
         prepend_config_files = prepend_config_files or []
