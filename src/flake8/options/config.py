@@ -17,16 +17,25 @@ class ConfigFileFinder(object):
 
     PROJECT_FILENAMES = ('setup.cfg', 'tox.ini')
 
-    def __init__(self, program_name, args, extra_config_files):
+    def __init__(self, program_name, args, prepend_config_files, extra_config_files):
         """Initialize object to find config files.
 
         :param str program_name:
             Name of the current program (e.g., flake8).
         :param list args:
             The extra arguments passed on the command-line.
+        :param list prepend_config_files:
+            Extra configuration files specified by the user to read before user and project configs.
         :param list extra_config_files:
-            Extra configuration files specified by the user to read.
+            Extra configuration files specified by the user to read after user and project configs.
         """
+        # The values of --prepend-config from the CLI
+        prepend_config_files = prepend_config_files or []
+        self.prepend_config_files = [
+            # Ensure the paths are absolute paths for local_config_files
+            os.path.abspath(f) for f in prepend_config_files
+        ]
+
         # The values of --append-config from the CLI
         extra_config_files = extra_config_files or []
         self.extra_config_files = [
@@ -115,7 +124,7 @@ class ConfigFileFinder(object):
             [str]
         """
         exists = os.path.exists
-        return [
+        return [f for f in self.prepend_config_files if exists(f)] + [
             filename
             for filename in self.generate_possible_local_files()
         ] + [f for f in self.extra_config_files if exists(f)]
