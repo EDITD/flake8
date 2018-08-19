@@ -37,7 +37,9 @@ def mock_config_finder(program='flake8', arguments=[],
         program, arguments, prepend_configs, append_configs)
 
     config_finder.user_config_file = mock.Mock(return_value=user_config)
-    config_finder.generate_possible_local_files = mock.Mock(return_value=local_configs)
+    config_finder.generate_possible_local_files = mock.Mock(
+        return_value=local_configs
+    )
 
     return config_finder
 
